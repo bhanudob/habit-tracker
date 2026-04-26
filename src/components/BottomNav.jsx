@@ -53,7 +53,7 @@ const navItems = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-lg z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-lg z-50">
       <div className="max-w-lg mx-auto flex items-center justify-around px-1 pb-safe">
         {navItems.map(({ to, label, icon, accent }) => (
           <NavLink
@@ -65,17 +65,17 @@ export default function BottomNav() {
                 'flex flex-col items-center gap-0.5 py-3 px-2 rounded-xl transition-colors min-w-0',
                 accent
                   ? isActive
-                    ? 'text-teal-600'
-                    : 'text-teal-500'
+                    ? 'text-teal-600 dark:text-teal-400'
+                    : 'text-teal-500 dark:text-teal-600'
                   : isActive
-                  ? 'text-teal-600'
-                  : 'text-slate-400 hover:text-slate-600',
+                  ? 'text-teal-600 dark:text-teal-400'
+                  : 'text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400',
               ].join(' ')
             }
           >
             {({ isActive }) => (
               <>
-                <span className={accent && isActive ? 'text-teal-600' : ''}>{icon}</span>
+                <span className={accent && isActive ? 'text-teal-600 dark:text-teal-400' : ''}>{icon}</span>
                 <span className="text-[9px] font-semibold tracking-wide truncate">{label}</span>
               </>
             )}

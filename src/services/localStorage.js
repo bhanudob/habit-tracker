@@ -126,10 +126,20 @@ export const plansStorage = {
   getForDate: (dateStr) => readPlans().filter((p) => p.date === dateStr),
   getAll: () => readPlans(),
   saveForDate: (dateStr, items) => {
-    const plans = readPlans().filter((p) => p.date !== dateStr)
-    const stamped = items.map((item) => ({ ...item, id: genId(), savedAt: new Date().toISOString() }))
+    const plans = readPlans()
+    const stamped = items.map((item) => ({
+      ...item,
+      id: genId(),
+      completed: false,
+      savedAt: new Date().toISOString(),
+    }))
     writePlans([...plans, ...stamped])
     return stamped
+  },
+  toggleComplete: (id) => {
+    const plans = readPlans().map((p) => (p.id === id ? { ...p, completed: !p.completed } : p))
+    writePlans(plans)
+    return plans.find((p) => p.id === id)
   },
   deleteItem: (id) => writePlans(readPlans().filter((p) => p.id !== id)),
   clearForDate: (dateStr) => writePlans(readPlans().filter((p) => p.date !== dateStr)),
