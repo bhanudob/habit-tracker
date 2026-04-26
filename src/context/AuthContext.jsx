@@ -1,122 +1,90 @@
-/**
- * Auth Context - Global authentication state management
- *
- * KEY CONCEPT: React Context API
- * Problem: Without Context, you'd pass auth data through every component (prop drilling)
- * Solution: Context stores auth state globally, accessible via useAuth hook
- *
- * Think of it like: Context = global state, useAuth = easy way to access it
- */
-
 import { createContext, useContext, useState, useEffect } from 'react'
-import { authAPI, getToken } from '../services/api'
 
-// Create context object
 const AuthContext = createContext()
 
-/**
- * AuthProvider - Wraps app to provide auth state to all children
- * Parent component that manages all auth logic
- */
+function getStoredUser() {
+  try {
+    const u = localStorage.getItem('habit_user')
+    return u ? JSON.parse(u) : null
+  } catch {
+    return null
+  }
+}
+
+function getStoredAccounts() {
+  try {
+    const a = localStorage.getItem('habit_accounts')
+    return a ? JSON.parse(a) : []
+  } catch {
+    return []
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  /**
-   * On app load: check if token exists in localStorage
-   * If yes, user was previously logged in (restore session)
-   * KEY CONCEPT: Session persistence - user stays logged in after page refresh
-   */
   useEffect(() => {
-    const token = getToken()
-    if (token) {
-      // Token exists, assume user is logged in
-      // (In production, you'd validate token with backend)
-      const savedUser = localStorage.getItem('habit_user')
-      if (savedUser) {
-        setUser(JSON.parse(savedUser))
-      }
-    }
+    const savedUser = getStoredUser()
+    if (savedUser) setUser(savedUser)
     setLoading(false)
   }, [])
 
-  // Register new user
-  const register = async (email, name, password) => {
-    try {
-      setError(null)
-      setLoading(true)
+  const register = (email, name, password) => {
+    setError(null)
+    if (!email || !name || !password) throw new Error('All fields required')
 
-      const response = await authAPI.register(email, name, password)
-
-      // Save user info
-      setUser(response.user)
-      localStorage.setItem('habit_user', JSON.stringify(response.user))
-
-      return response
-    } catch (err) {
+    const accounts = getStoredAccounts()
+    if (accounts.find((a) => a.email === email)) {
+      const err = new Error('An account with this email already exists')
       setError(err.message)
       throw err
-    } finally {
-      setLoading(false)
     }
+
+    const newUser = { id: Date.now().toString(), email, name }
+    accounts.push({ email, name, password, id: newUser.id })
+    localStorage.setItem('habit_accounts', JSON.stringify(accounts))
+    localStorage.setItem('habit_user', JSON.stringify(newUser))
+    localStorage.setItem('habit_token', 'local-' + newUser.id)
+    setUser(newUser)
+    return newUser
   }
 
-  // Login user
-  const login = async (email, password) => {
-    try {
-      setError(null)
-      setLoading(true)
-
-      const response = await authAPI.login(email, password)
-
-      // Save user info
-      setUser(response.user)
-      localStorage.setItem('habit_user', JSON.stringify(response.user))
-
-      return response
-    } catch (err) {
+  const login = (email, password) => {
+    setError(null)
+    const accounts = getStoredAccounts()
+    const account = accounts.find((a) => a.email === email && a.password === password)
+    if (!account) {
+      const err = new Error('Invalid email or password')
       setError(err.message)
       throw err
-    } finally {
-      setLoading(false)
     }
+    const loggedInUser = { id: account.id, email: account.email, name: account.name }
+    localStorage.setItem('habit_user', JSON.stringify(loggedInUser))
+    localStorage.setItem('habit_token', 'local-' + account.id)
+    setUser(loggedInUser)
+    return loggedInUser
   }
 
-  // Logout user
   const logout = () => {
-    authAPI.logout()
-    setUser(null)
     localStorage.removeItem('habit_user')
+    localStorage.removeItem('habit_token')
+    setUser(null)
     setError(null)
   }
 
-  // Check if user is authenticated
-  const isAuthenticated = !!user && !!getToken()
+  const isAuthenticated = !!user && !!localStorage.getItem('habit_token')
 
-  // Provide to all children
-  const value = {
-    user,
-    loading,
-    error,
-    isAuthenticated,
-    register,
-    login,
-    logout,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, loading, error, isAuthenticated, register, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
-/**
- * Custom hook to use auth context
- * Usage: const { user, login, logout } = useAuth()
- * Easier than useContext(AuthContext)
- */
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider')
-  }
+  if (!context) throw new Error('useAuth must be used inside AuthProvider')
   return context
 }
