@@ -115,6 +115,26 @@ export const logsStorage = {
   },
 }
 
+function readPlans() {
+  return JSON.parse(localStorage.getItem('ht_plans') || '[]')
+}
+function writePlans(data) {
+  localStorage.setItem('ht_plans', JSON.stringify(data))
+}
+
+export const plansStorage = {
+  getForDate: (dateStr) => readPlans().filter((p) => p.date === dateStr),
+  getAll: () => readPlans(),
+  saveForDate: (dateStr, items) => {
+    const plans = readPlans().filter((p) => p.date !== dateStr)
+    const stamped = items.map((item) => ({ ...item, id: genId(), savedAt: new Date().toISOString() }))
+    writePlans([...plans, ...stamped])
+    return stamped
+  },
+  deleteItem: (id) => writePlans(readPlans().filter((p) => p.id !== id)),
+  clearForDate: (dateStr) => writePlans(readPlans().filter((p) => p.date !== dateStr)),
+}
+
 export const notesStorage = {
   getAll: () => [...readNotes()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
   create: (content) => {

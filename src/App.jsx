@@ -8,6 +8,7 @@ import AddEditBlock from './pages/AddEditBlock'
 import NotesRevisions from './pages/NotesRevisions'
 import WeeklyReview from './pages/WeeklyReview'
 import CalendarView from './pages/CalendarView'
+import PlanMyDay from './pages/PlanMyDay'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/notes" element={<NotesRevisions />} />
             <Route path="/weekly" element={<WeeklyReview />} />
             <Route path="/calendar" element={<CalendarView />} />
+            <Route path="/plan" element={<PlanMyDay />} />
           </Route>
 
           {/* Fallback - redirect unknown routes to home */}
